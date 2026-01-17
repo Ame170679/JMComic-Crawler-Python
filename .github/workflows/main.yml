@@ -1,0 +1,37 @@
+# 工作流名称，可自定义
+name: 更新 JMCrawler
+# 触发条件：手动触发（点击按钮即可）+ 每日自动触发（可选，可注释掉）
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '0 0 * * *'  # 每日凌晨（UTC时间）自动同步，可修改定时规则
+
+# 工作流执行任务
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest  # 运行环境
+    steps:
+      # 检出 Fork 仓库
+      - name: 检出当前Fork仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整仓库历史
+
+      # 添加上游仓库关联
+      - name: 关联原仓库（upstream）
+        run: |
+          git remote add upstream https://github.com/hect0x7/JMComic-Crawler-Python.git
+          git fetch upstream
+
+      # 步骤3：合并原仓库更新到当前分支（main/master，根据实际分支修改）
+      - name: 合并upstream更新
+        run: |
+          git checkout master
+          git merge upstream/main --no-edit
+
+      # 步骤4：将合并后的更新推送到你的Fork仓库（云端）
+      - name: 推送到自己的Fork仓库
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}  # GitHub自动生成的令牌，无需手动配置
+          branch: main  # 你的Fork仓库默认分支（若为master，替换为master）
